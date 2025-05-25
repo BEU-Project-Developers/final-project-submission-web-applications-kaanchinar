@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16
+    container_name: petpet-postgres
+    environment:
+      POSTGRES_DB: petpetdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - petpet-network
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: petpet-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    networks:
+      - petpet-network
+    volumes:
+      - ./src/PetpetAPI/appsettings.Development.json:/app/appsettings.Development.json
+
+volumes:
+  postgres_data:
+
+networks:
+  petpet-network:
+    driver: bridge
