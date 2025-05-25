@@ -15,6 +15,7 @@ public interface IAuthService
     Task<ApiResponse<AuthResponseDto>> RefreshTokenAsync(RefreshTokenDto refreshTokenDto);
     Task<ApiResponse<bool>> LogoutAsync(string userId);
     Task<ApiResponse<bool>> RevokeRefreshTokenAsync(string refreshToken);
+    Task<ApiResponse<UserDto>> GetCurrentUserAsync(string userId);
 }
 
 public class AuthService : IAuthService
@@ -258,6 +259,36 @@ public class AuthService : IAuthService
             Success = true,
             Message = "Refresh token revoked successfully",
             Data = true
+        };
+    }
+
+    public async Task<ApiResponse<UserDto>> GetCurrentUserAsync(string userId)
+    {
+        var user = await _userManager.FindByIdAsync(userId);
+        
+        if (user == null || !user.IsActive)
+        {
+            return new ApiResponse<UserDto>
+            {
+                Success = false,
+                Message = "User not found"
+            };
+        }
+
+        var userDto = new UserDto
+        {
+            Id = user.Id,
+            Email = user.Email ?? string.Empty,
+            FirstName = user.FirstName,
+            LastName = user.LastName,
+            CreatedAt = user.CreatedAt
+        };
+
+        return new ApiResponse<UserDto>
+        {
+            Success = true,
+            Message = "User retrieved successfully",
+            Data = userDto
         };
     }
 

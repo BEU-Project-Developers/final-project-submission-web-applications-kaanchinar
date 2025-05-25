@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PetpetAPI.DTOs.Auth;
 using PetpetAPI.DTOs.Common;
@@ -34,6 +35,10 @@ public class AuthController : ControllerBase
         if (!result.Success)
             return BadRequest(result);
 
+        // Set JWT token in HTTP-only cookie
+        if (result.Data != null)
+            SetAuthCookies(result.Data);
+
         return Ok(result);
     }
 
@@ -49,6 +54,10 @@ public class AuthController : ControllerBase
         
         if (!result.Success)
             return BadRequest(result);
+
+        // Set JWT token in HTTP-only cookie
+        if (result.Data != null)
+            SetAuthCookies(result.Data);
 
         return Ok(result);
     }
@@ -82,6 +91,10 @@ public class AuthController : ControllerBase
             return Unauthorized();
 
         var result = await _authService.LogoutAsync(userId);
+
+        // Clear authentication cookies
+        ClearAuthCookies();
+
         return Ok(result);
     }
 
@@ -95,5 +108,61 @@ public class AuthController : ControllerBase
     {
         var result = await _authService.RevokeRefreshTokenAsync(refreshTokenDto.RefreshToken);
         return Ok(result);
+    }
+
+    /// <summary>
+    /// Get current authenticated user information
+    /// </summary>
+    /// <returns>Current user details</returns>
+    [HttpGet("me")]
+    [Authorize]
+    public async Task<ActionResult<ApiResponse<UserDto>>> GetCurrentUser()
+    {
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        
+        if (string.IsNullOrEmpty(userId))
+            return Unauthorized();
+
+        var result = await _authService.GetCurrentUserAsync(userId);
+        
+        if (!result.Success)
+            return NotFound(result);
+
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Sets JWT and refresh tokens in HTTP-only cookies
+    /// </summary>
+    /// <param name="authResponse">Authentication response containing tokens</param>
+    private void SetAuthCookies(AuthResponseDto authResponse)
+    {
+        var cookieOptions = new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true, // Requires HTTPS in production
+            SameSite = SameSiteMode.Lax,
+            Expires = authResponse.ExpiresAt
+        };
+
+        var refreshCookieOptions = new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true, // Requires HTTPS in production
+            SameSite = SameSiteMode.Lax,
+            Expires = DateTime.UtcNow.AddDays(7) // Refresh token typically lasts longer
+        };
+
+        Response.Cookies.Append("authToken", authResponse.Token, cookieOptions);
+        Response.Cookies.Append("refreshToken", authResponse.RefreshToken, refreshCookieOptions);
+    }
+
+    /// <summary>
+    /// Clears authentication cookies
+    /// </summary>
+    private void ClearAuthCookies()
+    {
+        Response.Cookies.Delete("authToken");
+        Response.Cookies.Delete("refreshToken");
     }
 }
