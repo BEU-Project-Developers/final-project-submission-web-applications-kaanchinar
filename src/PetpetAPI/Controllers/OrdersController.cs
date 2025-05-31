@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using PetpetAPI.DTOs.Common;
 using PetpetAPI.DTOs.Orders;
 using PetpetAPI.Services;
-using System.Security.Claims;
 
 namespace PetpetAPI.Controllers;
 
@@ -17,10 +16,12 @@ namespace PetpetAPI.Controllers;
 public class OrdersController : ControllerBase
 {
     private readonly IOrderService _orderService;
+    private readonly IAuthenticationHelper _authHelper;
 
-    public OrdersController(IOrderService orderService)
+    public OrdersController(IOrderService orderService, IAuthenticationHelper authHelper)
     {
         _orderService = orderService;
+        _authHelper = authHelper;
     }
 
     /// <summary>
@@ -31,11 +32,11 @@ public class OrdersController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<ApiResponse<OrderDto>>> CreateOrder([FromBody] CreateOrderDto createOrderDto)
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(userId))
-            return Unauthorized();
+        var authResult = _authHelper.ValidateAuthentication(User);
+        if (!authResult.Success)
+            return Unauthorized(authResult);
 
-        var result = await _orderService.CreateOrderAsync(userId, createOrderDto);
+        var result = await _orderService.CreateOrderAsync(authResult.Data!, createOrderDto);
         
         if (!result.Success)
             return BadRequest(result);
@@ -51,11 +52,11 @@ public class OrdersController : ControllerBase
     [HttpGet("my-orders")]
     public async Task<ActionResult<ApiResponse<PagedResult<OrderDto>>>> GetMyOrders([FromQuery] OrderFilterDto filter)
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(userId))
-            return Unauthorized();
+        var authResult = _authHelper.ValidateAuthentication(User);
+        if (!authResult.Success)
+            return Unauthorized(authResult);
 
-        var result = await _orderService.GetUserOrdersAsync(userId, filter);
+        var result = await _orderService.GetUserOrdersAsync(authResult.Data!, filter);
         return Ok(result);
     }
 
@@ -80,16 +81,17 @@ public class OrdersController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<ApiResponse<OrderDto>>> GetOrder(int id)
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        var userRoles = User.FindAll(ClaimTypes.Role).Select(c => c.Value).ToList();
+        var authResult = _authHelper.ValidateAuthentication(User);
+        if (!authResult.Success)
+            return Unauthorized(authResult);
 
         var result = await _orderService.GetOrderByIdAsync(id);
         
         if (!result.Success)
             return NotFound(result);
 
-        // Check if user owns the order or is admin
-        if (result.Data!.UserId != userId && !userRoles.Contains("Admin"))
+        // Check if user owns the order or is admin using the helper
+        if (!_authHelper.CanAccessResource(User, result.Data!.UserId))
             return Forbid();
 
         return Ok(result);

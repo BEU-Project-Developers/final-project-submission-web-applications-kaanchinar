@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using PetpetAPI.DTOs.Cart;
 using PetpetAPI.DTOs.Common;
 using PetpetAPI.Services;
-using System.Security.Claims;
 
 namespace PetpetAPI.Controllers;
 
@@ -17,10 +16,12 @@ namespace PetpetAPI.Controllers;
 public class CartController : ControllerBase
 {
     private readonly ICartService _cartService;
+    private readonly IAuthenticationHelper _authHelper;
 
-    public CartController(ICartService cartService)
+    public CartController(ICartService cartService, IAuthenticationHelper authHelper)
     {
         _cartService = cartService;
+        _authHelper = authHelper;
     }
 
     /// <summary>
@@ -30,11 +31,11 @@ public class CartController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<ApiResponse<CartSummaryDto>>> GetCart()
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(userId))
-            return Unauthorized();
+        var authResult = _authHelper.ValidateAuthentication(User);
+        if (!authResult.Success)
+            return Unauthorized(authResult);
 
-        var result = await _cartService.GetCartAsync(userId);
+        var result = await _cartService.GetCartAsync(authResult.Data!);
         return Ok(result);
     }
 
@@ -46,11 +47,11 @@ public class CartController : ControllerBase
     [HttpPost("items")]
     public async Task<ActionResult<ApiResponse<CartItemDto>>> AddToCart([FromBody] AddToCartDto addToCartDto)
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(userId))
-            return Unauthorized();
+        var authResult = _authHelper.ValidateAuthentication(User);
+        if (!authResult.Success)
+            return Unauthorized(authResult);
 
-        var result = await _cartService.AddToCartAsync(userId, addToCartDto);
+        var result = await _cartService.AddToCartAsync(authResult.Data!, addToCartDto);
         
         if (!result.Success)
             return BadRequest(result);
@@ -67,11 +68,11 @@ public class CartController : ControllerBase
     [HttpPut("items/{cartItemId}")]
     public async Task<ActionResult<ApiResponse<CartItemDto>>> UpdateCartItem(int cartItemId, [FromBody] UpdateCartItemDto updateCartItemDto)
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(userId))
-            return Unauthorized();
+        var authResult = _authHelper.ValidateAuthentication(User);
+        if (!authResult.Success)
+            return Unauthorized(authResult);
 
-        var result = await _cartService.UpdateCartItemAsync(userId, cartItemId, updateCartItemDto);
+        var result = await _cartService.UpdateCartItemAsync(authResult.Data!, cartItemId, updateCartItemDto);
         
         if (!result.Success)
             return NotFound(result);
@@ -87,11 +88,11 @@ public class CartController : ControllerBase
     [HttpDelete("items/{cartItemId}")]
     public async Task<ActionResult<ApiResponse<bool>>> RemoveFromCart(int cartItemId)
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(userId))
-            return Unauthorized();
+        var authResult = _authHelper.ValidateAuthentication(User);
+        if (!authResult.Success)
+            return Unauthorized(authResult);
 
-        var result = await _cartService.RemoveFromCartAsync(userId, cartItemId);
+        var result = await _cartService.RemoveFromCartAsync(authResult.Data!, cartItemId);
         
         if (!result.Success)
             return NotFound(result);
@@ -106,11 +107,11 @@ public class CartController : ControllerBase
     [HttpDelete]
     public async Task<ActionResult<ApiResponse<bool>>> ClearCart()
     {
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(userId))
-            return Unauthorized();
+        var authResult = _authHelper.ValidateAuthentication(User);
+        if (!authResult.Success)
+            return Unauthorized(authResult);
 
-        var result = await _cartService.ClearCartAsync(userId);
+        var result = await _cartService.ClearCartAsync(authResult.Data!);
         return Ok(result);
     }
 }
