@@ -64,6 +64,7 @@ public class ProductReviewSummaryDto
 public class ReviewHelpfulnessDto
 {
     [Required]
+    [Range(1, int.MaxValue, ErrorMessage = "ReviewId must be a positive number")]
     public int ReviewId { get; set; }
     
     [Required]

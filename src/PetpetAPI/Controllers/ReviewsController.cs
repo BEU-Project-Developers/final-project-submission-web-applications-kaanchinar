@@ -180,15 +180,24 @@ public class ReviewsController : ControllerBase
     {
         try
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userId))
                 return Unauthorized("User not found");
 
             var result = await _reviewService.VoteReviewHelpfulnessAsync(userId, dto);
             if (!result)
-                return BadRequest("Unable to vote on this review");
+                return BadRequest("Unable to vote on this review. You may not vote on your own review or the review may not exist.");
 
-            return Ok("Vote recorded successfully");
+            return Ok(new { message = "Vote recorded successfully", reviewId = dto.ReviewId, isHelpful = dto.IsHelpful });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
         }
         catch (Exception ex)
         {

@@ -1,4 +1,5 @@
 using PetpetAPI.Models;
+using System.Text.Json.Serialization;
 
 namespace PetpetAPI.DTOs.Products;
 
@@ -44,6 +45,7 @@ public class CreateProductDto
     public AnimalSection Section { get; set; }
     public ProductCategory Category { get; set; }
     public ProductState State { get; set; } = ProductState.InStock;
+    [JsonPropertyName("images")]
     public List<CreateProductImageDto> Images { get; set; } = new();
 }
 
@@ -59,14 +61,19 @@ public class UpdateProductDto
     public AnimalSection Section { get; set; }
     public ProductCategory Category { get; set; }
     public ProductState State { get; set; }
+    [JsonPropertyName("images")]
     public List<CreateProductImageDto> Images { get; set; } = new();
 }
 
 public class CreateProductImageDto
 {
+    [JsonPropertyName("imageUrl")]
     public string ImageUrl { get; set; } = string.Empty;
+    [JsonPropertyName("altText")]
     public string AltText { get; set; } = string.Empty;
+    [JsonPropertyName("displayOrder")]
     public int DisplayOrder { get; set; } = 1;
+    [JsonPropertyName("isPrimary")]
     public bool IsPrimary { get; set; } = false;
 }
 

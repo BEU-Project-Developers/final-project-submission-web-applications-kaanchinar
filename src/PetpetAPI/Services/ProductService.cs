@@ -180,6 +180,33 @@ public class ProductService : IProductService
         _context.Products.Add(product);
         await _context.SaveChangesAsync();
 
+        // Add product images
+        var productImages = new List<ProductImage>();
+        for (int i = 0; i < createProductDto.Images.Count; i++)
+        {
+            var imageDto = createProductDto.Images[i];
+            var productImage = new ProductImage
+            {
+                ProductId = product.Id,
+                ImageUrl = imageDto.ImageUrl,
+                AltText = !string.IsNullOrEmpty(imageDto.AltText) ? imageDto.AltText : product.Name,
+                DisplayOrder = imageDto.DisplayOrder > 0 ? imageDto.DisplayOrder : i + 1,
+                IsPrimary = imageDto.IsPrimary || i == 0 // First image is primary if none specified
+            };
+            productImages.Add(productImage);
+        }
+
+        if (productImages.Any())
+        {
+            _context.ProductImages.AddRange(productImages);
+            await _context.SaveChangesAsync();
+        }
+
+        // Load the product with images for the response
+        var productWithImages = await _context.Products
+            .Include(p => p.Images)
+            .FirstOrDefaultAsync(p => p.Id == product.Id);
+
         var productDto = new ProductDto
         {
             Id = product.Id,
@@ -196,7 +223,14 @@ public class ProductService : IProductService
             UpdatedAt = product.UpdatedAt,
             ReviewCount = 0,
             AverageRating = 0,
-            Images = new List<ProductImageDto>()
+            Images = productWithImages?.Images.Select(i => new ProductImageDto
+            {
+                Id = i.Id,
+                ImageUrl = i.ImageUrl,
+                AltText = i.AltText,
+                DisplayOrder = i.DisplayOrder,
+                IsPrimary = i.IsPrimary
+            }).OrderBy(i => i.DisplayOrder).ToList() ?? new List<ProductImageDto>()
         };
 
         return new ApiResponse<ProductDto>
@@ -209,7 +243,10 @@ public class ProductService : IProductService
 
     public async Task<ApiResponse<ProductDto>> UpdateProductAsync(int id, UpdateProductDto updateProductDto)
     {
-        var product = await _context.Products.FindAsync(id);
+        var product = await _context.Products
+            .Include(p => p.Images)
+            .FirstOrDefaultAsync(p => p.Id == id);
+            
         if (product == null)
         {
             return new ApiResponse<ProductDto>
@@ -231,7 +268,37 @@ public class ProductService : IProductService
         product.State = updateProductDto.State;
         product.UpdatedAt = DateTime.UtcNow;
 
+        // Update images: Remove existing and add new ones
+        if (updateProductDto.Images.Any())
+        {
+            // Remove existing images
+            _context.ProductImages.RemoveRange(product.Images);
+            
+            // Add new images
+            var productImages = new List<ProductImage>();
+            for (int i = 0; i < updateProductDto.Images.Count; i++)
+            {
+                var imageDto = updateProductDto.Images[i];
+                var productImage = new ProductImage
+                {
+                    ProductId = product.Id,
+                    ImageUrl = imageDto.ImageUrl,
+                    AltText = !string.IsNullOrEmpty(imageDto.AltText) ? imageDto.AltText : product.Name,
+                    DisplayOrder = imageDto.DisplayOrder > 0 ? imageDto.DisplayOrder : i + 1,
+                    IsPrimary = imageDto.IsPrimary || i == 0 // First image is primary if none specified
+                };
+                productImages.Add(productImage);
+            }
+            
+            _context.ProductImages.AddRange(productImages);
+        }
+
         await _context.SaveChangesAsync();
+
+        // Reload the product with updated images
+        var updatedProduct = await _context.Products
+            .Include(p => p.Images)
+            .FirstOrDefaultAsync(p => p.Id == id);
 
         var productDto = new ProductDto
         {
@@ -249,7 +316,14 @@ public class ProductService : IProductService
             UpdatedAt = product.UpdatedAt,
             ReviewCount = 0,
             AverageRating = 0,
-            Images = new List<ProductImageDto>()
+            Images = updatedProduct?.Images.Select(i => new ProductImageDto
+            {
+                Id = i.Id,
+                ImageUrl = i.ImageUrl,
+                AltText = i.AltText,
+                DisplayOrder = i.DisplayOrder,
+                IsPrimary = i.IsPrimary
+            }).OrderBy(i => i.DisplayOrder).ToList() ?? new List<ProductImageDto>()
         };
 
         return new ApiResponse<ProductDto>
