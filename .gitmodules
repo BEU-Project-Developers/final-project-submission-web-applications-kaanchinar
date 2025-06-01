@@ -1,0 +1,3 @@
+[submodule "petshop-frontend"]
+	path = petshop-frontend
+	url = https://github.com/kaanchinar/petshop-frontend
