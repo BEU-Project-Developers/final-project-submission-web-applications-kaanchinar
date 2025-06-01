@@ -24,4 +24,5 @@ public class Order
     // Navigation properties
     public virtual User User { get; set; } = null!;
     public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
+    public virtual ICollection<Review> Reviews { get; set; } = new List<Review>();
 }

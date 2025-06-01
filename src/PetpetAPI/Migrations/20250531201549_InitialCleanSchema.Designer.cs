@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using PetpetAPI.Data;
@@ -11,9 +12,11 @@ using PetpetAPI.Data;
 namespace PetpetAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250531201549_InitialCleanSchema")]
+    partial class InitialCleanSchema
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -342,7 +345,7 @@ namespace PetpetAPI.Migrations
                             Id = 1,
                             Brand = "PetNutrition",
                             Category = 2,
-                            CreatedAt = new DateTime(2025, 6, 1, 16, 57, 41, 138, DateTimeKind.Utc).AddTicks(7233),
+                            CreatedAt = new DateTime(2025, 5, 31, 20, 15, 48, 933, DateTimeKind.Utc).AddTicks(9754),
                             Description = "High-quality nutrition for adult cats",
                             IsActive = true,
                             LowStockThreshold = 10,
@@ -358,7 +361,7 @@ namespace PetpetAPI.Migrations
                             Id = 2,
                             Brand = "PlayTime",
                             Category = 1,
-                            CreatedAt = new DateTime(2025, 6, 1, 16, 57, 41, 138, DateTimeKind.Utc).AddTicks(7353),
+                            CreatedAt = new DateTime(2025, 5, 31, 20, 15, 48, 933, DateTimeKind.Utc).AddTicks(9875),
                             Description = "Durable rubber toy for large dogs",
                             IsActive = true,
                             LowStockThreshold = 10,
@@ -373,7 +376,7 @@ namespace PetpetAPI.Migrations
                             Id = 3,
                             Brand = "CleanPaws",
                             Category = 3,
-                            CreatedAt = new DateTime(2025, 6, 1, 16, 57, 41, 138, DateTimeKind.Utc).AddTicks(7455),
+                            CreatedAt = new DateTime(2025, 5, 31, 20, 15, 48, 933, DateTimeKind.Utc).AddTicks(9975),
                             Description = "Clumping cat litter with odor control",
                             IsActive = true,
                             LowStockThreshold = 10,
@@ -426,7 +429,7 @@ namespace PetpetAPI.Migrations
                         {
                             Id = 1,
                             AltText = "Premium Cat Food Package",
-                            CreatedAt = new DateTime(2025, 6, 1, 16, 57, 41, 139, DateTimeKind.Utc).AddTicks(2081),
+                            CreatedAt = new DateTime(2025, 5, 31, 20, 15, 48, 934, DateTimeKind.Utc).AddTicks(4815),
                             DisplayOrder = 1,
                             ImageUrl = "/images/cat-food-premium.jpg",
                             IsPrimary = true,
@@ -436,7 +439,7 @@ namespace PetpetAPI.Migrations
                         {
                             Id = 2,
                             AltText = "Dog Chew Toy",
-                            CreatedAt = new DateTime(2025, 6, 1, 16, 57, 41, 139, DateTimeKind.Utc).AddTicks(2345),
+                            CreatedAt = new DateTime(2025, 5, 31, 20, 15, 48, 934, DateTimeKind.Utc).AddTicks(5002),
                             DisplayOrder = 1,
                             ImageUrl = "/images/dog-chew-toy.jpg",
                             IsPrimary = true,
@@ -446,7 +449,7 @@ namespace PetpetAPI.Migrations
                         {
                             Id = 3,
                             AltText = "Premium Cat Litter",
-                            CreatedAt = new DateTime(2025, 6, 1, 16, 57, 41, 139, DateTimeKind.Utc).AddTicks(2346),
+                            CreatedAt = new DateTime(2025, 5, 31, 20, 15, 48, 934, DateTimeKind.Utc).AddTicks(5003),
                             DisplayOrder = 1,
                             ImageUrl = "/images/cat-litter-premium.jpg",
                             IsPrimary = true,
@@ -488,100 +491,6 @@ namespace PetpetAPI.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("RefreshTokens");
-                });
-
-            modelBuilder.Entity("PetpetAPI.Models.Review", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Comment")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("HelpfulVotes")
-                        .HasColumnType("integer");
-
-                    b.Property<bool>("IsApproved")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsVerifiedPurchase")
-                        .HasColumnType("boolean");
-
-                    b.Property<int>("OrderId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Rating")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<int>("UnhelpfulVotes")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("OrderId");
-
-                    b.HasIndex("ProductId");
-
-                    b.HasIndex("UserId");
-
-                    b.HasIndex("UserId", "ProductId", "OrderId")
-                        .IsUnique();
-
-                    b.ToTable("Reviews");
-                });
-
-            modelBuilder.Entity("PetpetAPI.Models.ReviewHelpfulness", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("IsHelpful")
-                        .HasColumnType("boolean");
-
-                    b.Property<int>("ReviewId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ReviewId");
-
-                    b.HasIndex("UserId", "ReviewId")
-                        .IsUnique();
-
-                    b.ToTable("ReviewHelpfulness");
                 });
 
             modelBuilder.Entity("PetpetAPI.Models.User", b =>
@@ -804,57 +713,9 @@ namespace PetpetAPI.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("PetpetAPI.Models.Review", b =>
-                {
-                    b.HasOne("PetpetAPI.Models.Order", "Order")
-                        .WithMany("Reviews")
-                        .HasForeignKey("OrderId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("PetpetAPI.Models.Product", "Product")
-                        .WithMany("Reviews")
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("PetpetAPI.Models.User", "User")
-                        .WithMany("Reviews")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Order");
-
-                    b.Navigation("Product");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("PetpetAPI.Models.ReviewHelpfulness", b =>
-                {
-                    b.HasOne("PetpetAPI.Models.Review", "Review")
-                        .WithMany("ReviewHelpfulness")
-                        .HasForeignKey("ReviewId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("PetpetAPI.Models.User", "User")
-                        .WithMany("ReviewHelpfulness")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Review");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("PetpetAPI.Models.Order", b =>
                 {
                     b.Navigation("OrderItems");
-
-                    b.Navigation("Reviews");
                 });
 
             modelBuilder.Entity("PetpetAPI.Models.Product", b =>
@@ -864,13 +725,6 @@ namespace PetpetAPI.Migrations
                     b.Navigation("Images");
 
                     b.Navigation("OrderItems");
-
-                    b.Navigation("Reviews");
-                });
-
-            modelBuilder.Entity("PetpetAPI.Models.Review", b =>
-                {
-                    b.Navigation("ReviewHelpfulness");
                 });
 
             modelBuilder.Entity("PetpetAPI.Models.User", b =>
@@ -880,10 +734,6 @@ namespace PetpetAPI.Migrations
                     b.Navigation("Orders");
 
                     b.Navigation("RefreshTokens");
-
-                    b.Navigation("ReviewHelpfulness");
-
-                    b.Navigation("Reviews");
                 });
 #pragma warning restore 612, 618
         }

@@ -80,6 +80,8 @@ public class ProductService : IProductService
                 State = p.State,
                 CreatedAt = p.CreatedAt,
                 UpdatedAt = p.UpdatedAt,
+                ReviewCount = 0,
+                AverageRating = 0,
                 Images = p.Images.Select(i => new ProductImageDto
                 {
                     Id = i.Id,
@@ -105,8 +107,8 @@ public class ProductService : IProductService
         return new ApiResponse<PagedResult<ProductDto>>
         {
             Success = true,
-            Message = "Products retrieved successfully",
-            Data = result
+            Data = result,
+            Message = "Products retrieved successfully"
         };
     }
 
@@ -114,7 +116,7 @@ public class ProductService : IProductService
     {
         var product = await _context.Products
             .Include(p => p.Images)
-            .Where(p => p.Id == id && p.IsActive)
+            .Where(p => p.IsActive)
             .Select(p => new ProductDto
             {
                 Id = p.Id,
@@ -129,6 +131,8 @@ public class ProductService : IProductService
                 State = p.State,
                 CreatedAt = p.CreatedAt,
                 UpdatedAt = p.UpdatedAt,
+                ReviewCount = 0,
+                AverageRating = 0,
                 Images = p.Images.Select(i => new ProductImageDto
                 {
                     Id = i.Id,
@@ -138,7 +142,7 @@ public class ProductService : IProductService
                     IsPrimary = i.IsPrimary
                 }).OrderBy(i => i.DisplayOrder).ToList()
             })
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(p => p.Id == id);
 
         if (product == null)
         {
@@ -152,8 +156,8 @@ public class ProductService : IProductService
         return new ApiResponse<ProductDto>
         {
             Success = true,
-            Message = "Product retrieved successfully",
-            Data = product
+            Data = product,
+            Message = "Product retrieved successfully"
         };
     }
 
@@ -170,40 +174,42 @@ public class ProductService : IProductService
             LowStockThreshold = createProductDto.LowStockThreshold,
             Section = createProductDto.Section,
             Category = createProductDto.Category,
-            State = createProductDto.State,
-            CreatedAt = DateTime.UtcNow,
-            IsActive = true
+            State = createProductDto.State
         };
 
         _context.Products.Add(product);
         await _context.SaveChangesAsync();
 
-        // Add images
-        if (createProductDto.Images.Any())
+        var productDto = new ProductDto
         {
-            var images = createProductDto.Images.Select(img => new ProductImage
-            {
-                ProductId = product.Id,
-                ImageUrl = img.ImageUrl,
-                AltText = img.AltText,
-                DisplayOrder = img.DisplayOrder,
-                IsPrimary = img.IsPrimary,
-                CreatedAt = DateTime.UtcNow
-            }).ToList();
+            Id = product.Id,
+            Name = product.Name,
+            Description = product.Description,
+            Price = product.Price,
+            OriginalPrice = product.OriginalPrice,
+            Brand = product.Brand,
+            StockQuantity = product.StockQuantity,
+            Section = product.Section,
+            Category = product.Category,
+            State = product.State,
+            CreatedAt = product.CreatedAt,
+            UpdatedAt = product.UpdatedAt,
+            ReviewCount = 0,
+            AverageRating = 0,
+            Images = new List<ProductImageDto>()
+        };
 
-            _context.ProductImages.AddRange(images);
-            await _context.SaveChangesAsync();
-        }
-
-        return await GetProductByIdAsync(product.Id);
+        return new ApiResponse<ProductDto>
+        {
+            Success = true,
+            Data = productDto,
+            Message = "Product created successfully"
+        };
     }
 
     public async Task<ApiResponse<ProductDto>> UpdateProductAsync(int id, UpdateProductDto updateProductDto)
     {
-        var product = await _context.Products
-            .Include(p => p.Images)
-            .FirstOrDefaultAsync(p => p.Id == id && p.IsActive);
-
+        var product = await _context.Products.FindAsync(id);
         if (product == null)
         {
             return new ApiResponse<ProductDto>
@@ -213,7 +219,6 @@ public class ProductService : IProductService
             };
         }
 
-        // Update product properties
         product.Name = updateProductDto.Name;
         product.Description = updateProductDto.Description;
         product.Price = updateProductDto.Price;
@@ -226,33 +231,39 @@ public class ProductService : IProductService
         product.State = updateProductDto.State;
         product.UpdatedAt = DateTime.UtcNow;
 
-        // Update images - remove existing and add new ones
-        _context.ProductImages.RemoveRange(product.Images);
-        
-        if (updateProductDto.Images.Any())
-        {
-            var images = updateProductDto.Images.Select(img => new ProductImage
-            {
-                ProductId = product.Id,
-                ImageUrl = img.ImageUrl,
-                AltText = img.AltText,
-                DisplayOrder = img.DisplayOrder,
-                IsPrimary = img.IsPrimary,
-                CreatedAt = DateTime.UtcNow
-            }).ToList();
-
-            _context.ProductImages.AddRange(images);
-        }
-
         await _context.SaveChangesAsync();
 
-        return await GetProductByIdAsync(product.Id);
+        var productDto = new ProductDto
+        {
+            Id = product.Id,
+            Name = product.Name,
+            Description = product.Description,
+            Price = product.Price,
+            OriginalPrice = product.OriginalPrice,
+            Brand = product.Brand,
+            StockQuantity = product.StockQuantity,
+            Section = product.Section,
+            Category = product.Category,
+            State = product.State,
+            CreatedAt = product.CreatedAt,
+            UpdatedAt = product.UpdatedAt,
+            ReviewCount = 0,
+            AverageRating = 0,
+            Images = new List<ProductImageDto>()
+        };
+
+        return new ApiResponse<ProductDto>
+        {
+            Success = true,
+            Data = productDto,
+            Message = "Product updated successfully"
+        };
     }
 
     public async Task<ApiResponse<bool>> DeleteProductAsync(int id)
     {
         var product = await _context.Products.FindAsync(id);
-        if (product == null || !product.IsActive)
+        if (product == null)
         {
             return new ApiResponse<bool>
             {
@@ -261,17 +272,15 @@ public class ProductService : IProductService
             };
         }
 
-        // Soft delete
         product.IsActive = false;
         product.UpdatedAt = DateTime.UtcNow;
-
         await _context.SaveChangesAsync();
 
         return new ApiResponse<bool>
         {
             Success = true,
-            Message = "Product deleted successfully",
-            Data = true
+            Data = true,
+            Message = "Product deleted successfully"
         };
     }
 
@@ -294,6 +303,8 @@ public class ProductService : IProductService
                 State = p.State,
                 CreatedAt = p.CreatedAt,
                 UpdatedAt = p.UpdatedAt,
+                ReviewCount = 0,
+                AverageRating = 0,
                 Images = p.Images.Select(i => new ProductImageDto
                 {
                     Id = i.Id,
@@ -303,13 +314,14 @@ public class ProductService : IProductService
                     IsPrimary = i.IsPrimary
                 }).OrderBy(i => i.DisplayOrder).ToList()
             })
+            .OrderBy(p => p.StockQuantity)
             .ToListAsync();
 
         return new ApiResponse<List<ProductDto>>
         {
             Success = true,
-            Message = "Low stock products retrieved successfully",
-            Data = products
+            Data = products,
+            Message = "Low stock products retrieved successfully"
         };
     }
 }

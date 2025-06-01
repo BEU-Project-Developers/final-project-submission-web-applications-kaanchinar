@@ -5,16 +5,19 @@ This project includes a comprehensive Authentication Helper Service (`IAuthentic
 ## Features
 
 ### ✅ User Authentication
+
 - Validate user authentication from JWT tokens
 - Extract user ID from claims
 - Check user existence and active status
 
 ### ✅ Role-Based Authorization
+
 - Check if user has specific roles
 - Admin role validation
 - Resource ownership verification
 
 ### ✅ Session Management
+
 - Centralized authentication validation
 - User context management across controllers
 - Database user lookup utilities
@@ -119,16 +122,19 @@ public async Task<ActionResult> GetProfile()
 ## Available Methods
 
 ### Authentication Methods
+
 - `ValidateAuthentication(ClaimsPrincipal user)` - Validates authentication and returns user ID
 - `GetCurrentUserId(ClaimsPrincipal user)` - Extracts user ID from claims
 - `GetCurrentUserRoles(ClaimsPrincipal user)` - Gets roles from current user claims
 
 ### Role Checking Methods
+
 - `HasRole(ClaimsPrincipal user, string role)` - Checks if user has specific role
 - `IsAdmin(ClaimsPrincipal user)` - Checks if user is admin
 - `CanAccessResource(ClaimsPrincipal user, string resourceUserId)` - Checks resource ownership or admin access
 
 ### Database Methods
+
 - `GetUserByIdAsync(string userId)` - Gets user entity from database
 - `IsUserActiveAsync(string userId)` - Checks if user exists and is active
 - `GetUserRolesAsync(string userId)` - Gets user roles from database
@@ -160,6 +166,7 @@ builder.Services.AddScoped<IAuthenticationHelper, AuthenticationHelper>();
 ## Migration from Manual Authentication
 
 **Before (Manual):**
+
 ```csharp
 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 if (string.IsNullOrEmpty(userId))
@@ -167,6 +174,7 @@ if (string.IsNullOrEmpty(userId))
 ```
 
 **After (With Helper):**
+
 ```csharp
 var authResult = _authHelper.ValidateAuthentication(User);
 if (!authResult.Success)

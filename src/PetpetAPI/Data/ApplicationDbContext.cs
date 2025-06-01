@@ -17,6 +17,8 @@ public class ApplicationDbContext : IdentityDbContext<User>
     public DbSet<Order> Orders { get; set; }
     public DbSet<OrderItem> OrderItems { get; set; }
     public DbSet<RefreshToken> RefreshTokens { get; set; }
+    public DbSet<Review> Reviews { get; set; }
+    public DbSet<ReviewHelpfulness> ReviewHelpfulness { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -120,6 +122,44 @@ public class ApplicationDbContext : IdentityDbContext<User>
         {
             entity.Property(u => u.FirstName).IsRequired().HasMaxLength(100);
             entity.Property(u => u.LastName).IsRequired().HasMaxLength(100);
+        });
+
+        // Review configuration
+        builder.Entity<Review>(entity =>
+        {
+            entity.HasKey(r => r.Id);
+            entity.Property(r => r.Comment).IsRequired().HasMaxLength(1000);
+            entity.Property(r => r.Title).HasMaxLength(100);
+            entity.HasOne(r => r.User)
+                  .WithMany(u => u.Reviews)
+                  .HasForeignKey(r => r.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(r => r.Product)
+                  .WithMany(p => p.Reviews)
+                  .HasForeignKey(r => r.ProductId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(r => r.Order)
+                  .WithMany(o => o.Reviews)
+                  .HasForeignKey(r => r.OrderId)
+                  .OnDelete(DeleteBehavior.Restrict);
+            entity.HasIndex(r => r.ProductId);
+            entity.HasIndex(r => r.UserId);
+            entity.HasIndex(r => new { r.UserId, r.ProductId, r.OrderId }).IsUnique();
+        });
+
+        // ReviewHelpfulness configuration
+        builder.Entity<ReviewHelpfulness>(entity =>
+        {
+            entity.HasKey(rh => rh.Id);
+            entity.HasOne(rh => rh.User)
+                  .WithMany(u => u.ReviewHelpfulness)
+                  .HasForeignKey(rh => rh.UserId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(rh => rh.Review)
+                  .WithMany(r => r.ReviewHelpfulness)
+                  .HasForeignKey(rh => rh.ReviewId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(rh => new { rh.UserId, rh.ReviewId }).IsUnique();
         });
 
         // Seed data

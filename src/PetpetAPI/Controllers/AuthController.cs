@@ -16,10 +16,12 @@ namespace PetpetAPI.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly IGoogleAuthService _googleAuthService;
 
-    public AuthController(IAuthService authService)
+    public AuthController(IAuthService authService, IGoogleAuthService googleAuthService)
     {
         _authService = authService;
+        _googleAuthService = googleAuthService;
     }
 
     /// <summary>
@@ -164,5 +166,75 @@ public class AuthController : ControllerBase
     {
         Response.Cookies.Delete("authToken");
         Response.Cookies.Delete("refreshToken");
+    }
+
+    /// <summary>
+    /// Authenticate with Google ID token
+    /// </summary>
+    /// <param name="googleTokenDto">Google ID token</param>
+    /// <returns>Authentication response with JWT token</returns>
+    [HttpPost("google")]
+    public async Task<ActionResult<ApiResponse<AuthResponseDto>>> GoogleAuth([FromBody] GoogleTokenDto googleTokenDto)
+    {
+        var result = await _googleAuthService.AuthenticateWithGoogleAsync(googleTokenDto.IdToken);
+        
+        if (!result.Success)
+            return BadRequest(result);
+
+        // Set JWT token in HTTP-only cookie
+        if (result.Data != null)
+            SetAuthCookies(result.Data);
+
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Get Google OAuth authorization URL
+    /// </summary>
+    /// <param name="state">State parameter for CSRF protection</param>
+    /// <returns>Google OAuth authorization URL</returns>
+    [HttpGet("google/url")]
+    public async Task<ActionResult<ApiResponse<string>>> GetGoogleAuthUrl([FromQuery] string state = "")
+    {
+        if (string.IsNullOrEmpty(state))
+            state = Guid.NewGuid().ToString();
+
+        var result = await _googleAuthService.GetGoogleAuthUrlAsync(state);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Handle Google OAuth callback
+    /// </summary>
+    /// <param name="code">Authorization code from Google</param>
+    /// <param name="state">State parameter for CSRF protection</param>
+    /// <returns>Redirect to frontend with authentication result</returns>
+    [HttpGet("google/callback")]
+    public async Task<IActionResult> GoogleCallback([FromQuery] string code, [FromQuery] string state)
+    {
+        if (string.IsNullOrEmpty(code))
+        {
+            var frontendUrl = Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:3000";
+            return Redirect($"{frontendUrl}/auth/error?message=Authorization code not provided");
+        }
+
+        var result = await _googleAuthService.HandleGoogleCallbackAsync(code);
+        
+        var frontendBaseUrl = Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:3000";
+        
+        if (result.Success && result.Data != null)
+        {
+            // Set JWT token in HTTP-only cookie
+            SetAuthCookies(result.Data);
+            
+            // Redirect to frontend success page
+            return Redirect($"{frontendBaseUrl}/auth/success");
+        }
+        else
+        {
+            // Redirect to frontend error page
+            var errorMessage = Uri.EscapeDataString(result.Message);
+            return Redirect($"{frontendBaseUrl}/auth/error?message={errorMessage}");
+        }
     }
 }

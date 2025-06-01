@@ -25,6 +25,8 @@
     <PackageReference Include="Scalar.AspNetCore" Version="1.2.42" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.2.1" />
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="9.0.0" />
+    <PackageReference Include="Google.Apis.Auth" Version="1.68.0" />
   </ItemGroup>
 
 </Project>

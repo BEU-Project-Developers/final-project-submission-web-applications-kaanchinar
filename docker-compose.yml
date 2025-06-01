@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   db:
     image: postgres:16
@@ -23,6 +21,17 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
+      # JWT Configuration
+      - JwtSettings__SecretKey=${JWT_SECRET_KEY:-your-super-secret-key-here-make-it-long-and-complex}
+      - JwtSettings__Issuer=${JWT_ISSUER:-PetpetAPI}
+      - JwtSettings__Audience=${JWT_AUDIENCE:-PetpetAPIUsers}
+      - JwtSettings__ExpiryMinutes=${JWT_EXPIRY_MINUTES:-60}
+      # Google OAuth Configuration
+      - GoogleAuth__ClientId=${GOOGLE_CLIENT_ID}
+      - GoogleAuth__ClientSecret=${GOOGLE_CLIENT_SECRET}
+      # API URLs
+      - ApiBaseUrl=${API_BASE_URL:-http://localhost:8080}
+      - FrontendUrl=${FRONTEND_URL:-http://localhost:3000}
     ports:
       - "8080:8080"
     depends_on:

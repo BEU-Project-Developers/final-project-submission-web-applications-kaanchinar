@@ -17,6 +17,10 @@ public class ProductDto
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
     public List<ProductImageDto> Images { get; set; } = new();
+    
+    // Review summary
+    public int ReviewCount { get; set; }
+    public double AverageRating { get; set; }
 }
 
 public class ProductImageDto
