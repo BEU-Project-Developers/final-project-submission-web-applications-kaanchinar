@@ -2,6 +2,8 @@
 
 A comprehensive backend API for an online pet shop and pet adoption platform built with ASP.NET Core 9, PostgreSQL, and Docker.
 
+## Business logic is in BUSINESS.md
+
 ## 🚀 Features
 
 ### Shop Logic
